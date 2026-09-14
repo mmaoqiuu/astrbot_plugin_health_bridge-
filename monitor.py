@@ -95,6 +95,23 @@ class HealthMonitor:
         except Exception:
             return None
 
+    @staticmethod
+    def _parse_time_to_minutes(val, default_min: int) -> int:
+        if val is None:
+            return default_min
+        if isinstance(val, (int, float)):
+            return int(val)
+        if isinstance(val, str):
+            val = val.strip()
+            if ":" in val:
+                m = HealthMonitor._parse_hhmm(val)
+                return m if m is not None else default_min
+            try:
+                return int(val)
+            except ValueError:
+                return default_min
+        return default_min
+
     # ---------- 检测 ----------
     def scan(self) -> list[dict]:
         alerts: list[dict] = []
@@ -213,9 +230,11 @@ class HealthMonitor:
         if minutes is None:
             return
 
-        # 深夜窗口：默认 23:00 ~ 05:00（支持跨天）。
-        start = int(self.config.get("late_night_start_min", 23 * 60))
-        end = int(self.config.get("late_night_end_min", 5 * 60))
+        # 深夜窗口：默认 23:00 ~ 05:00（支持跨天，支持直接填 HH:MM 或分钟数）。
+        start_val = self.config.get("late_night_start_time", self.config.get("late_night_start_min", "23:00"))
+        end_val = self.config.get("late_night_end_time", self.config.get("late_night_end_min", "05:00"))
+        start = self._parse_time_to_minutes(start_val, 23 * 60)
+        end = self._parse_time_to_minutes(end_val, 5 * 60)
         if start <= end:
             in_window = start <= minutes < end
         else:
