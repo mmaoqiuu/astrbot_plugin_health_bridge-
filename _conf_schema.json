@@ -23,7 +23,6 @@
     "default": "",
     "hint": "留空＝发到最近说过话的会话。填了＝主动关怀固定发到这个会话（填 unified_msg_origin，例如 default:private:123456789）。"
   },
-
   "monitor_enabled": {
     "description": "主动关怀总开关",
     "type": "bool",
@@ -54,7 +53,6 @@
     "default": 7,
     "hint": "这个点之前不推送关怀。"
   },
-
   "rule_resting_hr_high": {
     "description": "规则：静息心率偏高",
     "type": "bool",
@@ -103,6 +101,28 @@
     "default": 30,
     "hint": "凌晨 0:30 之后入睡算熬夜，就填 30。凌晨 1:00 之后算，就填 60。"
   },
+  "rule_late_night_realtime": {
+    "description": "实时熬夜判定（深夜窗口 + 心率偏高）",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后，深夜窗口内收到数据时，若心率高于静息，就触发熬夜关怀。"
+  },
+  "late_night_start_min": {
+    "description": "实时熬夜：深夜窗口开始（分钟，23:00 = 1380）",
+    "type": "int",
+    "default": 1380
+  },
+  "late_night_end_min": {
+    "description": "实时熬夜：深夜窗口结束（分钟，05:00 = 300）",
+    "type": "int",
+    "default": 300
+  },
+  "late_night_hr_ratio": {
+    "description": "实时熬夜：心率高于静息的倍数",
+    "type": "float",
+    "default": 1.15,
+    "hint": "1.15 表示心率比静息高 15% 以上，才算「人还醒着」。"
+  },
   "rule_hrv_low": {
     "description": "规则：HRV 偏低",
     "type": "bool",
@@ -115,7 +135,6 @@
     "default": 1.5,
     "hint": "比基线低多少个标准差算异常。默认 1.5。"
   },
-
   "cooldown_hours_resting_hr_high": {
     "description": "静息心率关怀冷却（小时）",
     "type": "int",
@@ -139,6 +158,12 @@
     "type": "int",
     "default": 24,
     "hint": "同上。"
+  },
+  "cooldown_hours_late_night_realtime": {
+    "description": "实时熬夜关怀冷却（小时）",
+    "type": "int",
+    "default": 1,
+    "hint": "熬夜是持续行为，冷却别设太长，1 小时比较合适。"
   },
   "cooldown_hours_hrv_low": {
     "description": "HRV 关怀冷却（小时）",
