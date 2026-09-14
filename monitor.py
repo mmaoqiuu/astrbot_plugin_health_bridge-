@@ -3,6 +3,8 @@
 
 时区原则跟 health_logic.py 一致：不读服务器时钟，
 一律以「已存数据里最新的那天」为基准往前数。
+例外：实时熬夜判定用 current_time（接收端写入的 HH:MM），
+只用于「此刻是不是深夜」，不参与日期/过期判断。
 """
 from __future__ import annotations
 
@@ -115,6 +117,8 @@ class HealthMonitor:
             self._check_sleep(today, history, alerts)
         if self.config.get("rule_late_night", True):
             self._check_late_night(today, alerts)
+        if self.config.get("rule_late_night_realtime", True):
+            self._check_late_night_realtime(today, alerts)
         if self.config.get("rule_hrv_low", False):
             self._check_hrv(today, history, alerts)
 
@@ -172,6 +176,7 @@ class HealthMonitor:
             })
 
     def _check_late_night(self, today, alerts):
+        """基于 HAE 睡眠汇总的入睡时间判定（次日复盘用）。"""
         sleep = today.get("sleep") or {}
         bedtime = sleep.get("bedtime")
         if not bedtime:
@@ -189,6 +194,53 @@ class HealthMonitor:
                 "cooldown_key": "late_night",
                 "hint": f"她昨晚 {hh:02d}:{mm:02d} 才睡，熬得有点晚。",
             })
+
+    def _check_late_night_realtime(self, today, alerts):
+        """实时熬夜判定：看「接收端写入的当前时刻」是否在深夜窗口，且心率偏高。
+
+        - current_time：接收端每次收到数据时写入的 HH:MM（服务器时钟）。
+        - latest_hr：当天最后一次收到的心率读数。
+        - resting_hr：当天静息心率（做对照）。
+        两个条件都满足才推：在深夜窗口 + 心率高于静息一定比例。
+        """
+        cur = today.get("current_time")
+        latest = today.get("latest_hr")
+        resting = today.get("resting_hr")
+        if not cur or latest is None or not resting:
+            return
+
+        minutes = self._parse_hhmm(cur)
+        if minutes is None:
+            return
+
+        # 深夜窗口：默认 23:00 ~ 05:00（支持跨天）。
+        start = int(self.config.get("late_night_start_min", 23 * 60))
+        end = int(self.config.get("late_night_end_min", 5 * 60))
+        if start <= end:
+            in_window = start <= minutes < end
+        else:
+            in_window = minutes >= start or minutes < end
+        if not in_window:
+            return
+
+        # 心率是否高于静息（说明人还醒着）。默认高 15% 以上。
+        ratio_cfg = float(self.config.get("late_night_hr_ratio", 1.15))
+        try:
+            awake = float(latest) > float(resting) * ratio_cfg
+        except (TypeError, ValueError):
+            return
+        if not awake:
+            return
+
+        hh, mm = divmod(minutes, 60)
+        alerts.append({
+            "type": "late_night_realtime",
+            "cooldown_key": "late_night_realtime",
+            "hint": (
+                f"现在是 {hh:02d}:{mm:02d}，她还没睡，"
+                f"心率 {int(latest)} bpm（静息 {int(resting)}），人还醒着。"
+            ),
+        })
 
     def _check_hrv(self, today, history, alerts):
         val = today.get("hrv_ms")
