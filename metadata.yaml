@@ -1,0 +1,6 @@
+name: astrbot_plugin_health_bridge
+display_name: 小狗健康
+desc: 接收手机推送的健康数据并存储，提供 LLM 工具供角色读取；内置异常检测与主动关怀。
+version: v1.3.0
+author: pupotato
+repo: ""
