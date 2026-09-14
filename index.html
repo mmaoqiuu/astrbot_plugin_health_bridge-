@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#d9c7ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>小狗健康</title>
+  <link rel="icon" href="/health/assets/兔球球.png" type="image/png">
+  <link rel="apple-touch-icon" href="/health/assets/兔球球.png">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html {
+      background-color: #d9c7ff;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #d9c7ff 0%, #e8dcff 18%, #f3ecff 38%, #faf8ff 60%);
+      background-attachment: fixed;      /* 让渐变不随滚动跑 */
+      color: #333;
+      padding: env(safe-area-inset-top, 16px) 20px 40px;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* 背景星星月亮装饰层 */
+    .sky {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .sky span {
+      position: absolute;
+      color: #c9b6ff;
+      opacity: 0.55;
+      animation: twinkle 4.5s ease-in-out infinite;
+    }
+    .sky .moon {
+      font-size: 30px;
+      color: #b9a2ff;
+      opacity: 0.7;
+      top: 46px;
+      right: 22px;
+      animation: floaty 7s ease-in-out infinite;
+    }
+    /* 右上角：星际小宝 当月亮/吉祥物 */
+    .sky .mascot-star {
+      position: absolute;
+      top: 24px;
+      right: 12px;
+      width: 92px;
+      height: 92px;
+      object-fit: contain;
+      opacity: 0.95;
+      animation: floaty 7s ease-in-out infinite;
+      filter: drop-shadow(0 4px 12px rgba(156, 123, 255, 0.35));
+    }
+    /* 右下角：兔球球 淡色水印 */
+    .sky .mascot-bunny {
+      position: absolute;
+      bottom: 20px;
+      right: 10px;
+      width: 160px;
+      height: 160px;
+      object-fit: contain;
+      opacity: 0.16;
+      pointer-events: none;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.25; transform: scale(0.9); }
+      50% { opacity: 0.75; transform: scale(1.08); }
+    }
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0) rotate(-8deg); }
+      50% { transform: translateY(-6px) rotate(-2deg); }
+    }
+
+    .page { position: relative; z-index: 1; }
+
+    /* 顶部导航 */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      margin-bottom: 18px;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #3a2f57;
+      letter-spacing: -0.2px;
+    }
+    .header-title .logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 6px rgba(156, 123, 255, 0.3));
+    }
+
+    /* 女性健康卡片 */
+    .period-card {
+      background: linear-gradient(135deg, #e8dcff 0%, #f3e6ff 55%, #efe0ff 100%);
+      border-radius: 24px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      position: relative;
+      box-shadow: 0 6px 20px rgba(167, 139, 250, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      overflow: hidden;
+      min-height: 118px;
+    }
+    /* 女性健康卡片内的小宝吉祥物 */
+    .period-card .card-mascot {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 105px;
+      height: 105px;
+      object-fit: contain;
+      z-index: 1;
+      filter: drop-shadow(0 4px 10px rgba(142, 102, 230, 0.25));
+    }
+    .period-card::after {
+      content: "";
+      position: absolute;
+      right: -15px;
+      bottom: -22px;
+      width: 140px;
+      height: 140px;
+      background: url("/health/assets/星际小宝.png") no-repeat center / contain;
+      opacity: 0.85;
+    }
+    .period-subtitle {
+      font-size: 13px;
+      color: #7d63c4;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .period-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .period-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #4a2f8f;
+      letter-spacing: -0.3px;
+    }
+    .period-desc {
+      font-size: 13px;
+      color: #7a67a8;
+      margin-top: 8px;
+    }
+
+    /* 数据状态行 */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+    .status-time {
+      font-size: 12px;
+      color: #8b86a3;
+      letter-spacing: -0.1px;
+    }
+    .btn-refresh {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #8b6cff;
+      background: #f3eeff;
+      border: 1px solid #e4daff;
+      border-radius: 6px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-refresh:active {
+      transform: scale(0.96);
+      background: #e4daff;
+    }
+
+    /* 四宫格卡片 */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 6px 20px rgba(150, 120, 255, 0.06);
+      border: 1px solid #f0e9ff;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::after {
+      content: "✦";
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 12px;
+      color: #ded0ff;
+    }
+    .card-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+    .card-label {
+      font-size: 13px;
+      color: #8c8888;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .card-value-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .card-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #2a2440;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .card-unit {
+      font-size: 13px;
+      color: #948dab;
+      font-weight: 500;
+    }
+    .card-subtext {
+      font-size: 11px;
+      color: #b5b0c7;
+      margin-top: auto;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 宽卡片 */
+    .wide-card {
+      background: #ffffff;
+      border-radius: 22px;
+      padding: 18px 20px;
+      box-shadow: 0 6px 20px rgba(150, 120, 255, 0.06);
+      border: 1px solid #f0e9ff;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .wide-card::after {
+      content: "✧";
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      font-size: 14px;
+      color: #ded0ff;
+    }
+    .wide-card .card-icon {
+      margin-bottom: 8px;
+    }
+    .wide-card .card-label {
+      font-size: 13px;
+      color: #8c8888;
+      margin-bottom: 4px;
+    }
+    .wide-card .card-value-wrap {
+      margin-bottom: 10px;
+    }
+    .wide-card .card-subtext {
+      font-size: 11px;
+      color: #b5b0c7;
+    }
+
+    /* 空数据提示 */
+    .empty-state {
+      text-align: center;
+      padding: 30px 0 10px;
+      color: #b0a9c6;
+      font-size: 13px;
+    }
+    .empty-state img {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      opacity: 0.85;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 4px 12px rgba(156, 123, 255, 0.2));
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    .spinning {
+      display: inline-block;
+      animation: spin 0.8s linear infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 背景装饰 -->
+  <div class="sky" aria-hidden="true">
+    <span style="top: 8%;  left: 6%;  font-size: 12px;">✦</span>
+    <span style="top: 20%; left: 88%; font-size: 10px; animation-delay: 1.2s;">✧</span>
+    <span style="top: 36%; left: 3%;  font-size: 9px;  animation-delay: 2.1s;">✦</span>
+    <span style="top: 58%; left: 92%; font-size: 11px; animation-delay: 0.6s;">✧</span>
+    <span style="top: 74%; left: 8%;  font-size: 10px; animation-delay: 1.8s;">✦</span>
+    <span style="top: 90%; left: 80%; font-size: 12px; animation-delay: 2.6s;">✧</span>
+    <img class="mascot-bunny" src="/health/assets/星际小宝.png" alt="">
+  </div>
+
+  <div class="page">
+
+    <!-- 顶部栏 -->
+    <div class="header">
+      <div class="header-title">
+        <img class="logo" src="/health/assets/兔球球.png" alt="logo">
+        小狗健康
+      </div>
+    </div>
+
+    <!-- 女性健康卡片 -->
+    <div class="period-card" id="periodCard">
+      <div class="period-subtitle">女性健康</div>
+      <div class="period-main">
+        <div class="period-title" id="periodTitle">今日 · 经期护理</div>
+      </div>
+      <div class="period-desc" id="periodDesc">暂无经期数据</div>
+    </div>
+
+    <!-- 状态信息与刷新 -->
+    <div class="status-bar">
+      <div class="status-time" id="statusTime">数据更新于 --:--:--</div>
+      <button class="btn-refresh" id="btnRefresh" onclick="fetchData()">
+        <span id="refreshIcon">🔄</span> 刷新数据
+      </button>
+    </div>
+
+    <!-- 空状态（有数据时隐藏） -->
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <img src="/health/assets/星际小宝.png" alt="">
+      <div>还没有收到身体数据哦～</div>
+    </div>
+
+    <!-- 数据区（无数据时隐藏） -->
+    <div id="dataArea" style="display:none;">
+      <!-- 四宫格指标 -->
+      <div class="grid">
+        <div class="card">
+          <div class="card-icon">❤️</div>
+          <div class="card-label">心率</div>
+          <div class="card-value-wrap">
+            <div class="card-value" id="valHr">--</div>
+            <div class="card-unit">bpm</div>
+          </div>
+          <div class="card-subtext" id="subHr">静息 -- · 步行 --</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🫁</div>
+          <div class="card-label">血氧</div>
+          <div class="card-value-wrap">
+            <div class="card-value" id="valOxygen">--</div>
+            <div class="card-unit">%</div>
+          </div>
+          <div class="card-subtext" id="subOxygen">最近一次读数</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🐾</div>
+          <div class="card-label">今日步数</div>
+          <div class="card-value-wrap">
+            <div class="card-value" id="valSteps">--</div>
+            <div class="card-unit">步</div>
+          </div>
+          <div class="card-subtext" id="subSteps">-- km</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">😴</div>
+          <div class="card-label">昨晚睡眠</div>
+          <div class="card-value-wrap">
+            <div class="card-value" id="valSleepHrs">--</div>
+            <div class="card-unit">小时</div>
+          </div>
+          <div class="card-subtext" id="subSleep">--</div>
+        </div>
+      </div>
+
+      <!-- 宽卡片：活力指标 -->
+      <div class="wide-card">
+        <div class="card-icon">🌟</div>
+        <div class="card-label">活力指标 (中高强度)</div>
+        <div class="card-value-wrap">
+          <div class="card-value" id="valExercise">--</div>
+          <div class="card-unit">分钟</div>
+        </div>
+        <div class="card-subtext" id="subExercise">今日中高强度活动</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    async function fetchData() {
+      const icon = document.getElementById("refreshIcon");
+      icon.classList.add("spinning");
+      try {
+        const resp = await fetch("/health/api/data?t=" + Date.now());
+        if (!resp.ok) throw new Error("Network error");
+        const res = await resp.json();
+        if (res.ok) {
+          renderData(res.data || {}, res.server_time);
+        }
+      } catch (e) {
+        console.error("加载数据失败", e);
+        document.getElementById("statusTime").textContent = "数据加载失败，请稍后重试";
+      } finally {
+        setTimeout(() => icon.classList.remove("spinning"), 500);
+      }
+    }
+
+    function renderData(data, serverTime) {
+      const hasData = data && Object.keys(data).length > 0 && data.date;
+
+      // 空状态切换
+      document.getElementById("emptyState").style.display = hasData ? "none" : "block";
+      document.getElementById("dataArea").style.display = hasData ? "block" : "none";
+
+      // 状态栏：优先用数据自己的接收时间
+      const recvAt = data && data._received_at;
+      document.getElementById("statusTime").textContent = recvAt
+        ? `数据接收于 ${recvAt}`
+        : "暂无数据";
+
+      if (!hasData) return;
+
+      // 经期
+      const periodTitle = document.getElementById("periodTitle");
+      const periodDesc = document.getElementById("periodDesc");
+      if (data.in_period === true) {
+        periodTitle.textContent = "今日 · 经期中";
+        periodDesc.textContent = "多喝温水 · 注意休息";
+      } else if (data.in_period === false) {
+        periodTitle.textContent = "今日 · 不在经期";
+        periodDesc.textContent = "保持好心情 · 规律作息";
+      } else {
+        periodTitle.textContent = "今日 · 经期护理";
+        periodDesc.textContent = "暂无经期数据";
+      }
+
+      // 心率：显示真实的静息 + 步行两个值（无假范围）
+      const rest = data.resting_hr ? Math.round(data.resting_hr) : null;
+      const walk = data.walking_hr ? Math.round(data.walking_hr) : null;
+      const hrVal = rest || walk;
+      if (hrVal) {
+        document.getElementById("valHr").textContent = hrVal;
+        document.getElementById("subHr").textContent =
+          `静息 ${rest ?? "--"} · 步行 ${walk ?? "--"}`;
+      } else {
+        document.getElementById("valHr").textContent = "--";
+        document.getElementById("subHr").textContent = "暂无心率数据";
+      }
+
+      // 血氧
+      if (data.blood_oxygen_pct != null) {
+        document.getElementById("valOxygen").textContent = Math.round(data.blood_oxygen_pct);
+        document.getElementById("subOxygen").textContent = "最近一次读数";
+      } else {
+        document.getElementById("valOxygen").textContent = "--";
+        document.getElementById("subOxygen").textContent = "暂无血氧数据";
+      }
+
+      // 步数：只显示距离，无 kcal 估算
+      if (data.steps != null) {
+        document.getElementById("valSteps").textContent = Math.round(data.steps);
+        const dist = data.distance_km != null ? Number(data.distance_km).toFixed(2) : "--";
+        document.getElementById("subSteps").textContent = `${dist} km`;
+      } else {
+        document.getElementById("valSteps").textContent = "--";
+        document.getElementById("subSteps").textContent = "暂无步数数据";
+      }
+
+      // 睡眠：显示真实小时数，无假评分
+      if (data.sleep && data.sleep.duration_min) {
+        const dur = data.sleep.duration_min;
+        const hrs = (dur / 60).toFixed(1);
+        document.getElementById("valSleepHrs").textContent = hrs;
+        const bed = data.sleep.bedtime;
+        const wake = data.sleep.wake_time;
+        document.getElementById("subSleep").textContent =
+          bed && wake ? `${bed} 入睡 · ${wake} 醒` : "昨晚睡眠";
+      } else {
+        document.getElementById("valSleepHrs").textContent = "--";
+        document.getElementById("subSleep").textContent = "暂无睡眠数据";
+      }
+
+      // 活力指标：站立显示真实小时数
+      const exMin = (data.activity && data.activity.exercise_min) || 0;
+      const standHr = (data.activity && data.activity.stand_hr) || 0;
+      document.getElementById("valExercise").textContent = Math.round(exMin);
+      document.getElementById("subExercise").textContent =
+        `今日中高强度活动 · 站立 ${standHr} 小时`;
+    }
+
+    fetchData();
+    setInterval(fetchData, 30000);
+  </script>
+</body>
+</html>
