@@ -8,8 +8,9 @@
 日期一律以手机发来的 `date` 为准；连数据保留的「过期」判断也以
 已存数据里最新的那天为基准来算，绝不读服务器时钟。
 
-例外：`_received_at` 由接收端在「收到数据那一刻」写入（用服务器时钟），
-仅用于向 LLM 标注数据新鲜度，不参与任何日期/过期判断。
+例外：`_received_at` 和 `current_time` 由接收端在「收到数据那一刻」写入
+（用服务器时钟），仅用于向 LLM 标注数据新鲜度、以及实时熬夜判定，
+不参与任何日期/过期判断。
 """
 
 from __future__ import annotations
@@ -92,6 +93,8 @@ _HAE_METRIC_MAP = {
     "heart_rate_min": "heart_rate_min",
     "heart_rate_max": "heart_rate_max",
     "heart_rate_average": "heart_rate_avg",
+    # 实时心率：取当天最后一条（最近读数），供熬夜判定用。
+    "heart_rate": "latest_hr",
     # 以下按真实导出样本校准新增：体重 / 距离 / 爬楼 / 步行心率 / 营养。
     "weight_body_mass": "weight_kg",
     "body_mass": "weight_kg",
@@ -390,7 +393,8 @@ def store_report(data_dir: Path, data: dict) -> Path:
     """把一条当天数据写成文件。返回写入的文件路径。
 
     支持增量合并同一天的数据，保留事件记录等。
-    每次存储都会把 `_received_at` 刷成服务器当前时间，用于向 LLM 标注数据新鲜度。
+    每次存储都会把 `_received_at` 和 `current_time` 刷成服务器当前时间，
+    分别用于向 LLM 标注数据新鲜度、以及实时熬夜判定。
     """
     date_str = extract_date(data)
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -426,10 +430,12 @@ def store_report(data_dir: Path, data: dict) -> Path:
         else:
             merged[k] = v
 
-    # 接收端统一记录「收到数据的时刻」，覆盖上报端可能写死的旧值。
-    # 这样 LLM 读到的 _received_at 永远反映最近一次收到数据的时间。
-    # 注意：这里读了一次服务器时钟，仅用于标注新鲜度，不参与日期/过期判断。
-    merged["_received_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # 接收端统一记录「收到数据的时刻」。
+    # _received_at：带日期，用于标注新鲜度。
+    # current_time：只要 HH:MM，用于实时熬夜判定。
+    now = datetime.now()
+    merged["_received_at"] = now.strftime("%Y-%m-%d %H:%M:%S")
+    merged["current_time"] = now.strftime("%H:%M")
 
     text = json.dumps(merged, ensure_ascii=False, indent=2)
     tmp = data_dir / f".{date_str}.json.tmp"
@@ -691,6 +697,10 @@ def _day_fragments(data: dict) -> list[str]:
     walking_hr = _fmt_number(data.get("walking_hr"))
     if walking_hr is not None:
         frags.append(f"步行心率 {walking_hr}")
+
+    latest_hr = _fmt_number(data.get("latest_hr"))
+    if latest_hr is not None:
+        frags.append(f"最近心率 {latest_hr}")
 
     weight = _fmt_number(data.get("weight_kg"))
     if weight is not None:
