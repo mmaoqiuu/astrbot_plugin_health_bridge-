@@ -1,0 +1,149 @@
+{
+  "auth_token": {
+    "description": "接收端密钥",
+    "type": "string",
+    "hint": "手机上报时在请求头 X-Auth-Token 里带上同样的值。可留空：插件首次启动会自动生成一串专属随机密钥并填到这里（重载插件后可见）。",
+    "obvious_hint": true
+  },
+  "listen_port": {
+    "description": "接收端监听端口",
+    "type": "int",
+    "default": 8787,
+    "hint": "插件会在这个端口开一个只收 POST 的 HTTP 端点。需在服务器防火墙放行。改完要重载插件。"
+  },
+  "retention_days": {
+    "description": "数据保留天数",
+    "type": "int",
+    "default": 30,
+    "hint": "超过这个天数的旧数据自动清理。以已存数据里最新的那天为基准往前算。"
+  },
+  "push_target_umo": {
+    "description": "主动关怀发送目标",
+    "type": "string",
+    "default": "",
+    "hint": "留空＝发到最近说过话的会话。填了＝主动关怀固定发到这个会话（填 unified_msg_origin，例如 default:private:123456789）。"
+  },
+
+  "monitor_enabled": {
+    "description": "主动关怀总开关",
+    "type": "bool",
+    "default": false,
+    "hint": "开启后会定时扫描健康数据，发现异常时主动发消息关心。建议先用 /health_monitor test 验证规则无误再开。"
+  },
+  "check_interval": {
+    "description": "扫描间隔（秒）",
+    "type": "int",
+    "default": 900,
+    "hint": "每隔多少秒扫一次健康数据。默认 900 秒＝15 分钟。"
+  },
+  "baseline_days": {
+    "description": "基线天数",
+    "type": "int",
+    "default": 7,
+    "hint": "用过去多少天的数据算「正常水平」。历史不足 3 天时不会触发任何关怀。"
+  },
+  "quiet_hours_start": {
+    "description": "静默时段开始（点）",
+    "type": "int",
+    "default": 23,
+    "hint": "这个点之后不推送关怀。跨天写，比如 23 到 7。"
+  },
+  "quiet_hours_end": {
+    "description": "静默时段结束（点）",
+    "type": "int",
+    "default": 7,
+    "hint": "这个点之前不推送关怀。"
+  },
+
+  "rule_resting_hr_high": {
+    "description": "规则：静息心率偏高",
+    "type": "bool",
+    "default": true,
+    "hint": "今天静息心率明显高于历史基线时触发。"
+  },
+  "resting_hr_z": {
+    "description": "静息心率偏离阈值",
+    "type": "float",
+    "default": 2.0,
+    "hint": "比基线高多少个标准差算异常。越大越不敏感。默认 2.0。"
+  },
+  "rule_spo2_low": {
+    "description": "规则：血氧偏低",
+    "type": "bool",
+    "default": true,
+    "hint": "血氧低于绝对阈值时触发。"
+  },
+  "spo2_threshold": {
+    "description": "血氧阈值（%）",
+    "type": "float",
+    "default": 95,
+    "hint": "血氧低于这个值算异常。默认 95。"
+  },
+  "rule_sleep_low": {
+    "description": "规则：睡眠时长偏短",
+    "type": "bool",
+    "default": true,
+    "hint": "昨晚睡眠时长明显短于历史基线时触发。"
+  },
+  "sleep_short_min": {
+    "description": "睡眠偏短阈值（分钟）",
+    "type": "int",
+    "default": 90,
+    "hint": "比平时少睡多少分钟算异常。默认 90 分钟。"
+  },
+  "rule_late_night": {
+    "description": "规则：熬夜",
+    "type": "bool",
+    "default": true,
+    "hint": "入睡时间晚于阈值时触发。"
+  },
+  "late_night_bedtime_min": {
+    "description": "熬夜阈值（凌晨第几分钟）",
+    "type": "int",
+    "default": 30,
+    "hint": "凌晨 0:30 之后入睡算熬夜，就填 30。凌晨 1:00 之后算，就填 60。"
+  },
+  "rule_hrv_low": {
+    "description": "规则：HRV 偏低",
+    "type": "bool",
+    "default": false,
+    "hint": "HRV 个体差异大，默认关。开了的话 HRV 明显低于基线会触发。"
+  },
+  "hrv_z": {
+    "description": "HRV 偏离阈值",
+    "type": "float",
+    "default": 1.5,
+    "hint": "比基线低多少个标准差算异常。默认 1.5。"
+  },
+
+  "cooldown_hours_resting_hr_high": {
+    "description": "静息心率关怀冷却（小时）",
+    "type": "int",
+    "default": 24,
+    "hint": "同一条关怀推送后，多少小时内不再重复推。"
+  },
+  "cooldown_hours_spo2_low": {
+    "description": "血氧关怀冷却（小时）",
+    "type": "int",
+    "default": 24,
+    "hint": "同上。"
+  },
+  "cooldown_hours_sleep_short": {
+    "description": "睡眠关怀冷却（小时）",
+    "type": "int",
+    "default": 24,
+    "hint": "同上。"
+  },
+  "cooldown_hours_late_night": {
+    "description": "熬夜关怀冷却（小时）",
+    "type": "int",
+    "default": 24,
+    "hint": "同上。"
+  },
+  "cooldown_hours_hrv_low": {
+    "description": "HRV 关怀冷却（小时）",
+    "type": "int",
+    "default": 24,
+    "hint": "同上。"
+  }
+}
