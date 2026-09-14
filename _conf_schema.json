@@ -107,17 +107,17 @@
     "default": true,
     "hint": "开启后，深夜窗口内收到数据时，若心率高于静息，就触发熬夜关怀。"
   },
-  "late_night_start_min": {
-    "description": "实时熬夜开始时间（填总分钟数，如 23:00 填 1380）",
-    "type": "int",
-    "default": 1380,
-    "hint": "深夜监测的起始点。换算方法：小时×60 + 分钟。比如 23:00 就填 1380，23:30 填 1410，00:00 填 0。"
+  "late_night_start_time": {
+    "description": "实时熬夜开始时间",
+    "type": "string",
+    "default": "23:00",
+    "hint": "深夜监测开始时间，直接填时间即可，比如 23:00 或 01:00。"
   },
-  "late_night_end_min": {
-    "description": "实时熬夜结束时间（填总分钟数，如 05:00 填 300）",
-    "type": "int",
-    "default": 300,
-    "hint": "深夜监测的截止点。换算方法：小时×60 + 分钟。比如 05:00 就填 300，06:00 填 360。"
+  "late_night_end_time": {
+    "description": "实时熬夜结束时间",
+    "type": "string",
+    "default": "05:00",
+    "hint": "深夜监测结束时间，直接填时间即可，比如 05:00 或 06:00。"
   },
   "late_night_hr_ratio": {
     "description": "实时熬夜：心率高于静息的倍数",
